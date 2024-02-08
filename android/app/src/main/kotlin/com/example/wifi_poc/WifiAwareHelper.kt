@@ -113,51 +113,46 @@ class WifiAwareHelper(private val context: Context) {
         val ss = ServerSocket(0)
         val port = ss.localPort
 
-        try {
-            Log.d("port",port.toString())
             val networkSpecifier = WifiAwareNetworkSpecifier.Builder(mDiscoverySession!!, mPeerHandle!!)
                 .setPskPassphrase("somepassword")
                 .setPort(port)
                 .build()
-            var mNetworkCapabilities:NetworkCapabilities? = null
-            var mNetwork: Network? =null
+        var mNetworkCapabilities:NetworkCapabilities? = null
+        var mNetwork: Network? =null
 
             val myNetworkRequest = NetworkRequest.Builder()
                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI_AWARE)
                 .setNetworkSpecifier(networkSpecifier)
                 .build()
-        }catch (e:IOException){
-            Log.d("connect ===> ",e.toString())
-        }
+        val networkCallBack = NetworkCallBack()
+
+        connectivityManager.requestNetwork(myNetworkRequest,networkCallBack)
 
 
-//        val callback = object : ConnectivityManager.NetworkCallback() {
-//            override fun onAvailable(network: Network) {
-//
-//            }
-//
-//            override fun onCapabilitiesChanged(
-//                network: Network,
-//                networkCapabilities: NetworkCapabilities
-//            ) {
-//                mNetworkCapabilities = networkCapabilities
-//                mNetwork = network
-//            }
-//
-//            override fun onLost(network: Network) {
-//
-//            }
-//        }
-//
-//        connectivityManager.requestNetwork(myNetworkRequest,callback)
-//
 //        val peerAwareInfo = mNetworkCapabilities?.transportInfo as WifiAwareNetworkInfo
 //        val peerIpv6 = peerAwareInfo.peerIpv6Addr
 //        val peerPort = peerAwareInfo.port
 //
 //        val socket = mNetwork?.getSocketFactory()?.createSocket(peerIpv6, peerPort)
 
-     //   Log.d("socket ===> ",socket.toString())
+
+    }
+
+    inner class NetworkCallBack :ConnectivityManager.NetworkCallback(){
+        override fun onAvailable(network: Network) {
+            Log.d(" onAvailable ===> ",network.toString())
+        }
+
+        override fun onCapabilitiesChanged(
+            network: Network,
+            networkCapabilities: NetworkCapabilities
+        ) {
+            Log.d(" onCapabilitiesChanged ",network.toString())
+        }
+
+        override fun onLost(network: Network) {
+            Log.d("onLost ===> ",network.toString())
+        }
     }
 
     inner class AttachCallbackManager : AttachCallback() {
@@ -205,28 +200,21 @@ class WifiAwareHelper(private val context: Context) {
             Log.d("onSubscribeStarted", "session $session")
         }
 
-        override fun onMessageSendFailed(messageId: Int) {
-            super.onMessageSendFailed(messageId)
-        }
 
-        override fun onMessageSendSucceeded(messageId: Int) {
-            super.onMessageSendSucceeded(messageId)
-        }
-
-        override fun onServiceLost(peerHandle: PeerHandle, reason: Int) {
-            super.onServiceLost(peerHandle, reason)
-            Log.d("onServiceLost", "reason $reason")
-        }
         override fun onServiceDiscovered(
             peerHandle: PeerHandle,
             serviceSpecificInfo: ByteArray,
             matchFilter: List<ByteArray>
         ) {
             mPeerHandle = peerHandle
-            var test = "test"
-            test.toByteArray()
+            val test = "test"
             mDiscoverySession?.sendMessage(mPeerHandle!!,0,test.toByteArray())
             Log.d("onServiceDiscovered", "peerHandle $peerHandle")
+        }
+
+        override fun onServiceLost(peerHandle: PeerHandle, reason: Int) {
+            super.onServiceLost(peerHandle, reason)
+            Log.d("onServiceLost", "reason $reason")
         }
     }
 
